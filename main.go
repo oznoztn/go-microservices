@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"go-microservices/handlers"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"time"
 )
 
@@ -26,5 +28,25 @@ func main() {
 		WriteTimeout: 1 * time.Second,
 	}
 
-	s.ListenAndServe()
+	// The service won't block as i wrapped it up in a go function.
+	// But that means it also going to immediately shut down
+	go func() {
+		// ListenAndServe burada bloklayacaktı. O yüzden go func içerisine aldık.
+		err := s.ListenAndServe()
+		if err != nil {
+			l.Fatal(err)
+		}
+	}()
+
+	// signal.Notify will broadcast a message on the channel whenever it receives Kill & Interrupt signals from the OS
+	signalChannel := make(chan os.Signal)
+	signal.Notify(signalChannel, os.Interrupt)
+	signal.Notify(signalChannel, os.Kill)
+
+	// Reading from a channel block until the messages available to be consumed
+	issuedSignal := <-signalChannel
+	l.Println("Received terminate, graceful shutdown.", issuedSignal)
+
+	tc, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	s.Shutdown(tc)
 }
