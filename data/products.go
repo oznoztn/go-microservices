@@ -1,6 +1,10 @@
 package data
 
-import "time"
+import (
+	"encoding/json"
+	"io"
+	"time"
+)
 
 type Product struct {
 	Id          int     `json:"id"`
@@ -13,7 +17,23 @@ type Product struct {
 	DeletedOn   string  `json:"-"`
 }
 
-func GetProducts() []*Product {
+type Products []*Product
+
+func (p *Products) ToJSON(w io.Writer) error {
+	// Marshal yerine direkt encoder (stream) üzerinde çalıştık
+	// Marshal bize array döndürüyordu, bu da allocation demek.
+	// Bu büyük JSON dokümanlarında sıkıntı oluştururdu.
+	// Artık direkt encoder üzerinde çalıştığımızdan allocation yok.
+	// Hem daha hızlı. Belki normal kullanımlarda bu göze batmayabilir,
+	// fakat özellikle yüksek trafikli mikroservis ortamlarında fark hissettirebilir.
+	// Diğer taraftan bu yöntem öyle mikro optimizasyon vs. de değil.
+	// Dolayısıyla bu yol varken neden ötekini kullanalım ki?
+	e := json.NewEncoder(w)
+	return e.Encode(p)
+}
+
+// []*Product döndürmek yerine custom Products tipini döndürüyoruz. İkisi de birbiri yerine kullanılabilir.
+func GetProducts() Products {
 	return productList
 }
 
