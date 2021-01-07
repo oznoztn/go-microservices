@@ -33,7 +33,7 @@ func main() {
 	// The service won't block as i wrapped it up in a go function.
 	// But that means it also going to immediately shut down
 	go func() {
-		// ListenAndServe burada bloklayacaktı. O yüzden go func içerisine aldık.
+		// ListenAndServe bloklayacaktı. O yüzden go func içerisine aldık.
 		err := s.ListenAndServe()
 		if err != nil {
 			l.Fatal(err)
