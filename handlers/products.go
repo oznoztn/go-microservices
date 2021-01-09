@@ -14,7 +14,7 @@ func NewProducts(l *log.Logger) *Products {
 	return &Products{l}
 }
 
-func (p *Products) getProducts(rw http.ResponseWriter, r *http.Request) {
+func (p *Products) GetProducts(rw http.ResponseWriter, r *http.Request) {
 	lp := data.GetProducts()
 	err := lp.ToJSON(rw)
 
@@ -36,15 +36,8 @@ func (p *Products) addProduct(rw http.ResponseWriter, r *http.Request) {
 	data.AddProduct(product)
 }
 
-func (p *Products) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodGet {
-		p.getProducts(rw, r)
-		return
-	}
-	if r.Method == http.MethodPost {
-		p.addProduct(rw, r)
-		return
-	}
-
-	rw.WriteHeader(http.StatusNotImplemented)
-}
+// ServeHTTP is OBSOLETE now since we use gorilla/mux to find out
+//   which httpHandler we are going to continue on based on the request path,
+//func (p *Products) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
+// ...
+//}

@@ -8,23 +8,22 @@ import (
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 func main() {
 	l := log.New(os.Stdout, "product-api", log.LstdFlags)
-	hh := handlers.NewHello(l)
-	gh := handlers.NewGoodBye(l)
 	ph := handlers.NewProducts(l)
 
-	// önceki derste defaultServeMux'ı kullanıyorduk. Artık kendi oluşturduğumuz ServeMux'ı kullanıyoruz.
-	sm := http.NewServeMux()
-	sm.Handle("/", hh)
-	sm.Handle("/good-bye", gh)
-	sm.Handle("/api/products", ph)
+	router := mux.NewRouter()
+
+	getRouter := router.Methods(http.MethodGet).Subrouter()
+	getRouter.HandleFunc("/api/products", ph.GetProducts)
 
 	s := &http.Server{
 		Addr:         ":9090",
-		Handler:      sm,
+		Handler:      router,
 		IdleTimeout:  120 * time.Second,
 		ReadTimeout:  1 * time.Second,
 		WriteTimeout: 1 * time.Second,
