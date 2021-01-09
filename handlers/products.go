@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"go-microservices/data"
 	"log"
 	"net/http"
@@ -29,14 +30,13 @@ func (p *Products) GetProducts(rw http.ResponseWriter, r *http.Request) {
 func (p *Products) AddProduct(rw http.ResponseWriter, r *http.Request) {
 	p.l.Println("Handle POST Product")
 
-	product := &data.Product{}
+	//prod := &data.Product{}
+	//err = prod.FromJson(r.Body)
+	// Since we use middleware, we can fetch the product from the request context
+	// Value returns an interface, so we need to cast this to Product
+	prod := r.Context().Value(KeyProduct{}).(data.Product)
 
-	err := product.FromJson(r.Body)
-	if err != nil {
-		http.Error(rw, "--Unable to unmarshal JSON", http.StatusBadRequest)
-	}
-
-	data.AddProduct(product)
+	data.AddProduct(&prod)
 }
 
 func (p *Products) UpdateProduct(rw http.ResponseWriter, r *http.Request) {
@@ -50,19 +50,40 @@ func (p *Products) UpdateProduct(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	p.l.Println("Handle PUT Product", id)
-	prod := &data.Product{}
 
-	err = prod.FromJson(r.Body)
-	if err != nil {
-		http.Error(rw, "Unable to unmarshal JSON", http.StatusInternalServerError)
-		return
-	}
+	//prod := &data.Product{}
+	//err = prod.FromJson(r.Body)
+	// Since we use middleware, we can fetch the product from the request context
+	// Value returns an interface, so we need to cast this to Product
+	prod := r.Context().Value(KeyProduct{}).(data.Product)
 
-	err = data.UpdateProduct(id, prod)
+	err = data.UpdateProduct(id, &prod)
 	if err == data.ErrProductNotFound {
 		http.Error(rw, "Product not found", http.StatusNotFound)
 		return
 	}
+}
+
+type KeyProduct struct{}
+
+func (p Products) MiddlewareProductValidation(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		prod := &data.Product{}
+
+		err := prod.FromJson(r.Body)
+		if err != nil {
+			http.Error(rw, "Unable to unmarshal JSON", http.StatusInternalServerError)
+			return
+		}
+
+		// add the product to the context of the next middleware
+		// Key string tipinde.. Fakat direkt string vermek yerine struct vermek daha iyi ve genel bir yaklaşım.
+		ctx := context.WithValue(r.Context(), KeyProduct{}, prod)
+		r = r.WithContext(ctx)
+
+		p.l.Println("The product is valid. Calling the next middleware...")
+		next.ServeHTTP(rw, r)
+	})
 }
 
 // ServeHTTP is OBSOLETE now since we use gorilla/mux to find out
