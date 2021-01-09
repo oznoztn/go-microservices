@@ -21,6 +21,9 @@ func main() {
 	getRouter := router.Methods(http.MethodGet).Subrouter()
 	getRouter.HandleFunc("/api/products", ph.GetProducts)
 
+	postRouter := router.Methods(http.MethodPost).Subrouter()
+	postRouter.HandleFunc("/api/product", ph.AddProduct)
+
 	s := &http.Server{
 		Addr:         ":9090",
 		Handler:      router,
