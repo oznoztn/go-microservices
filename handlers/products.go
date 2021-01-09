@@ -4,6 +4,9 @@ import (
 	"go-microservices/data"
 	"log"
 	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 type Products struct {
@@ -34,6 +37,32 @@ func (p *Products) AddProduct(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	data.AddProduct(product)
+}
+
+func (p *Products) UpdateProduct(rw http.ResponseWriter, r *http.Request) {
+	// I cannot define an id field in the method signature to just get that
+	// I need to get the product Id from the request context
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+
+	if err != nil {
+		http.Error(rw, "Unable to parse Id field", http.StatusBadRequest)
+	}
+
+	p.l.Println("Handle PUT Product", id)
+	prod := &data.Product{}
+
+	err = prod.FromJson(r.Body)
+	if err != nil {
+		http.Error(rw, "Unable to unmarshal JSON", http.StatusInternalServerError)
+		return
+	}
+
+	err = data.UpdateProduct(id, prod)
+	if err == data.ErrProductNotFound {
+		http.Error(rw, "Product not found", http.StatusNotFound)
+		return
+	}
 }
 
 // ServeHTTP is OBSOLETE now since we use gorilla/mux to find out
