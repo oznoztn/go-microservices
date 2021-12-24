@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"context"
-	"go-microservices/data"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/oznoztn/go-microservices/data"
 )
 
 type Products struct {

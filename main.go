@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
-	"go-microservices/handlers"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/oznoztn/go-microservices/handlers"
 
 	"github.com/gorilla/mux"
 )
